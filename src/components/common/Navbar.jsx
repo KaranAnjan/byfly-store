@@ -125,9 +125,12 @@ const Navbar = () => {
         <div className={`relative z-10 flex justify-between items-center transition-[height] duration-300 ease-out ${isScrolled ? 'h-16' : 'h-20'}`}>
           {/* Byfly brand */}
           <Link to="/" className="flex items-center gap-2 md:gap-3 hover:opacity-90 transition-all duration-300 flex-shrink-0 group">
-            <img src="/logo.png" alt="Byfly" className="h-14 w-16 object-contain md:h-16 md:w-[4.5rem]" />
+            <span className="relative block h-[3.15rem] w-16 overflow-hidden md:h-[3.4rem] md:w-[4.5rem]">
+              <img src="/assets/logo.png" alt="BYFLY logo" className="absolute left-0 top-0 h-auto w-full max-w-none" />
+            </span>
             <div className="block">
-              <p className="text-[10px] md:text-sm text-emerald-100 leading-tight">Wholesale Store</p>
+              <p className="text-lg font-extrabold italic leading-none tracking-[0.12em] text-white md:text-xl">BYFLY</p>
+              <p className="mt-1 whitespace-nowrap text-[9px] uppercase leading-tight tracking-[0.04em] text-emerald-100">WHOLE SALE STORE</p>
             </div>
           </Link>
 

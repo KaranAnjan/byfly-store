@@ -32,38 +32,38 @@ const Home = () => {
   const features = [
     {
       icon: Gem,
-      title: 'Premium Quality',
-      desc: 'Handpicked items with finest craftsmanship, ensuring every piece meets our standards.',
+      title: 'Wholesale Pricing',
+      desc: 'Competitive wholesale rates help you protect your margins and grow your business.',
       bgLight: 'bg-emerald-50',
     },
     {
       icon: Truck,
-      title: 'Fast Delivery',
-      desc: 'Quick and reliable shipping nationwide with secure packaging and real-time tracking.',
+      title: 'Reliable Dispatch',
+      desc: 'Orders are packed carefully and dispatched quickly to keep your inventory moving.',
       bgLight: 'bg-pink-50',
     },
     {
       icon: Shield,
-      title: 'Authentic Products',
-      desc: '100% genuine items guaranteed. Every purchase comes with our authenticity promise.',
+      title: 'Verified Quality',
+      desc: 'Genuine products checked for quality so you can order with confidence for your customers.',
       bgLight: 'bg-blue-50',
     },
     {
       icon: Award,
-      title: 'Easy Returns',
-      desc: 'Hassle-free returns within 7 days. Your satisfaction is our top priority.',
+      title: 'Flexible Bulk Orders',
+      desc: 'Order the quantities you need with clear minimum order terms for wholesale buyers.',
       bgLight: 'bg-amber-50',
     },
     {
       icon: Sparkles,
-      title: 'Handcrafted Designs',
-      desc: 'Each piece is uniquely designed by skilled artisans with attention to every detail.',
+      title: 'Fresh Product Range',
+      desc: 'Discover new designs and dependable bestsellers to keep your store collection fresh.',
       bgLight: 'bg-emerald-50',
     },
     {
       icon: Heart,
-      title: 'Customer Love',
-      desc: 'Thousands of happy customers across India trust us for their special moments.',
+      title: 'Business Support',
+      desc: 'A dependable wholesale partner focused on smooth ordering and long-term business relationships.',
       bgLight: 'bg-red-50',
     },
   ]
@@ -161,7 +161,7 @@ const Home = () => {
             <span className="inline-block text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mb-2">
               Why Us
             </span>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Why Choose Byfly?</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Why Choose Byfly Wholesale?</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

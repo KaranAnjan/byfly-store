@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { ArrowLeft, Check, Chrome, LogIn } from 'lucide-react'
+import { ArrowLeft, Check, Chrome } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabaseClient'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -157,8 +157,13 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-green-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-7 bg-white p-8 rounded-2xl shadow-xl">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4"><LogIn className="h-6 w-6 text-emerald-700" /></div>
-          <h1 className="text-3xl font-extrabold text-gray-900">Byfly Wholesale</h1>
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <img src="/assets/logo.png" alt="BYFLY logo" className="h-12 w-14 object-contain" />
+            <div className="text-left">
+              <h1 className="text-xl font-extrabold italic leading-none tracking-[0.12em] text-gray-900">BYFLY</h1>
+              <p className="mt-1 whitespace-nowrap text-[9px] uppercase leading-tight tracking-[0.04em] text-emerald-700">WHOLE SALE STORE</p>
+            </div>
+          </div>
           <p className="mt-2 text-sm text-gray-600">
             {mode === 'details' ? 'Phone verified. Add your business details to finish.' : mode === 'code' ? `Enter the SMS code sent to ${normalizedPhone}.` : mode === 'verifying' ? 'Verifying OTP…' : mode === 'merging' ? 'OTP matched. Completing sign in…' : mode === 'success' ? 'Verification complete. Signing you in…' : 'Sign in or create your account using Google or phone.'}
           </p>
@@ -178,7 +183,6 @@ const Login = () => {
               </div>
               <button type="submit" disabled={loading} className="w-full rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">{loading ? 'Sending code…' : 'Continue with phone'}</button>
             </form>
-            <p className="text-center text-xs text-gray-500">Existing accounts sign in automatically. New accounts are created after verification.</p>
           </motion.div>}
 
           {(mode === 'code' || mode === 'verifying') && <motion.form key="code" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} className="space-y-5" onSubmit={handleVerifyPhone}>

@@ -60,18 +60,18 @@ const HeroSection = () => {
         <div className="max-w-2xl text-center md:text-left">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs sm:text-sm font-medium text-white backdrop-blur-md">
             <Sparkles className="h-4 w-4 text-yellow-300" />
-            Premium Fashion Jewellery House
+            Wholesale Jewellery & Gift Supply
           </div>
 
           <h1 className="mt-6 text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
-            Little details.
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400">
-              Lasting sparkle.
+            Stock your store.
+            <span className="block whitespace-nowrap text-3xl text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-400 sm:text-4xl lg:text-6xl">
+              Grow with confidence.
             </span>
           </h1>
 
           <p className="mt-6 max-w-xl mx-auto md:mx-0 text-base sm:text-lg text-emerald-50/90 leading-relaxed">
-            Discover thoughtful gifts and jewellery made for every moment worth celebrating.
+            Quality jewellery and gift collections at wholesale prices, ready for your next order.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3 justify-center md:justify-start">
@@ -79,14 +79,14 @@ const HeroSection = () => {
               to="/products"
               className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-emerald-800 shadow-lg transition hover:bg-yellow-200 hover:shadow-xl active:scale-95"
             >
-              Explore Collection
+              Shop Wholesale Collection
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              to="/products?category=gifts"
+              to="/products"
               className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-black/10 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/15"
             >
-              Gift Ideas
+              Browse Categories
             </Link>
           </div>
         </div>

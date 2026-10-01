@@ -17,9 +17,9 @@ const Footer = () => {
               Premium fashion jewellery and curated gift collections.
             </p>
             <div className="space-y-1.5 text-xs text-emerald-200">
-              <a href="tel:+917407437378" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href="tel:+919339746144" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Phone className="h-3.5 w-3.5 text-emerald-300" />
-                +91 7407437378
+                +91 9339746144
               </a>
               <a href="mailto:info@monimala.com" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail className="h-3.5 w-3.5 text-emerald-300" />

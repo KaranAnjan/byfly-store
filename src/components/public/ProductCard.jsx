@@ -14,6 +14,9 @@ const ProductCard = ({ product }) => {
   const canMeetMinimum = product.stock >= minimumOrder
   const inCart = cart.some(item => item.id === product.id)
   const wishlisted = isInWishlist(product.id)
+  const wholesaleDiscount = product.wholesale_mrp != null && product.wholesale_price != null && Number(product.wholesale_mrp) > Number(product.wholesale_price)
+    ? Math.round(((Number(product.wholesale_mrp) - Number(product.wholesale_price)) / Number(product.wholesale_mrp)) * 100)
+    : 0
 
   const imageUrl = product.image_url ? getImageUrl(product.image_url) : null
 
@@ -97,8 +100,10 @@ const ProductCard = ({ product }) => {
             {product.wholesale_price != null ? (
                 <>
                   <span className="text-base font-bold text-emerald-700">Rs. {product.wholesale_price}</span>
-                  {product.wholesale_mrp != null && Number(product.wholesale_mrp) > Number(product.wholesale_price) &&
-                    <span className="text-xs text-gray-400 line-through">Rs. {product.wholesale_mrp}</span>}
+                  {wholesaleDiscount > 0 && <>
+                    <span className="text-xs text-gray-400 line-through">Rs. {product.wholesale_mrp}</span>
+                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">{wholesaleDiscount}% OFF</span>
+                  </>}
                 </>
               ) : (
                 <span className="text-xs font-medium text-gray-500">Price on request</span>

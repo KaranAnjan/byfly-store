@@ -22,7 +22,7 @@ const Cart = () => {
   const navigate = useNavigate()
   const { cart, loading: cartLoading, removeFromCart, updateQuantity, total, clearCart } = useCart()
   const { user } = useAuth()
-  const phone = import.meta.env.VITE_PHONE || '+917407437378'
+  const phone = import.meta.env.VITE_PHONE
 
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [editingAddress, setEditingAddress] = useState(false)

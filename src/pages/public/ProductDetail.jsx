@@ -19,6 +19,9 @@ const ProductDetail = () => {
   if (loading) return <Loading />
   if (!product) return <div className="text-center py-16 text-lg text-gray-500">Product not found</div>
   const minimumOrder = product.min_order_qty || 1
+  const wholesaleDiscount = product.wholesale_mrp != null && product.wholesale_price != null && Number(product.wholesale_mrp) > Number(product.wholesale_price)
+    ? Math.round(((Number(product.wholesale_mrp) - Number(product.wholesale_price)) / Number(product.wholesale_mrp)) * 100)
+    : 0
   const canMeetMinimum = product.stock >= minimumOrder
 
   const handleAddToCart = () => {
@@ -125,8 +128,10 @@ const ProductDetail = () => {
               {product.wholesale_price != null ? (
                 <>
                   <span className="text-base font-bold text-emerald-700">₹{product.wholesale_price}</span>
-                  {product.wholesale_mrp != null && Number(product.wholesale_mrp) > Number(product.wholesale_price) &&
-                    <span className="text-sm text-gray-400 line-through">₹{product.wholesale_mrp}</span>}
+                  {wholesaleDiscount > 0 && <>
+                    <span className="text-sm text-gray-400 line-through">₹{product.wholesale_mrp}</span>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">{wholesaleDiscount}% OFF</span>
+                  </>}
                 </>
               ) : (
                 <span className="text-xs font-medium text-gray-500">Price on request</span>
@@ -172,7 +177,7 @@ const ProductDetail = () => {
               <button
                 onClick={() => {
                   const msg = encodeURIComponent(`Hi, interested in:\n${product.product_name}\nCode: ${product.product_code}\n${product.wholesale_price != null ? `Wholesale price: Rs. ${product.wholesale_price}` : 'Please share the wholesale price'}`)
-                  window.open(`https://wa.me/${(import.meta.env.VITE_PHONE || '+917407437378').replace(/[^0-9]/g, '')}?text=${msg}`, '_blank')
+                  window.open(`https://wa.me/${(import.meta.env.VITE_PHONE || '+919339746144').replace(/[^0-9]/g, '')}?text=${msg}`, '_blank')
                 }}
                 className="text-center text-sm font-medium text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 hover:border-green-300 rounded-lg py-2.5 transition-all"
               >
