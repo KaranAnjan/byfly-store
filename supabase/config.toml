@@ -1,0 +1,2 @@
+[functions.exchange-firebase-login]
+verify_jwt = false
