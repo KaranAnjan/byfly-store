@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { ArrowLeft, Check, Chrome } from 'lucide-react'
+import { ArrowLeft, Chrome } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabaseClient'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -28,11 +28,19 @@ const Login = () => {
   const location = useLocation()
   const from = location.state?.from?.pathname || new URLSearchParams(location.search).get('redirect') || '/'
   const normalizedPhone = normalizeIndianPhone(phone)
+  const subtitleText =
+    mode === 'details' ? 'Phone verified. Add your business details to finish.'
+      : mode === 'code' ? `Enter the SMS code sent to ${normalizedPhone}.`
+        : mode === 'choose' ? 'Sign in or create your account using Google or phone.'
+          : ''
 
   const showVerifiedState = async (animateOtp = false) => {
     setMode(animateOtp ? 'merging' : 'success')
-    await new Promise((resolve) => window.setTimeout(resolve, animateOtp ? 2600 : 700))
-    if (animateOtp) setMode('success')
+    await new Promise((resolve) => window.setTimeout(resolve, animateOtp ? 1800 : 700))
+    if (animateOtp) {
+      setMode('success')
+      await new Promise((resolve) => window.setTimeout(resolve, 700))
+    }
   }
 
   useEffect(() => () => verifierRef.current?.clear(), [])
@@ -153,9 +161,70 @@ const Login = () => {
     setSignupIdToken('')
   }
 
+  const renderVerification = () => {
+    const step = window.matchMedia('(min-width: 640px)').matches ? 60 : 48
+    const isMerging = mode === 'merging'
+    return (
+      <motion.div key="verification" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-center py-6" role="status" aria-label="Phone verified">
+        <div className="relative flex h-12 w-[280px] items-center justify-center sm:h-14 sm:w-[348px]">
+          {isMerging && (
+            <div className="absolute inset-0 flex items-center justify-center gap-2 sm:gap-3">
+              {Array.from({ length: 6 }, (_, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ x: 0, opacity: 1, scale: 1 }}
+                  animate={{ x: (2.5 - index) * step, opacity: 0, scale: 0.4 }}
+                  transition={{ duration: 0.55, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+                  className="grid h-12 w-10 place-items-center rounded-xl border-2 border-emerald-500 bg-white text-lg font-bold text-emerald-700 shadow-md sm:h-14 sm:w-12"
+                >
+                  {code[index] || '•'}
+                </motion.div>
+              ))}
+            </div>
+          )}
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0, backgroundColor: '#ffffff', borderColor: '#10b981', boxShadow: '0 0 0 0 rgba(16,185,129,0), 0 0px 0px rgba(16,185,129,0)' }}
+            animate={{ scale: 1, opacity: 1, backgroundColor: '#059669', borderColor: '#059669', boxShadow: '0 0 0 6px rgba(16,185,129,0.14), 0 8px 20px rgba(16,185,129,0.28)' }}
+            transition={isMerging
+              ? {
+                  scale: { delay: 0.3, duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+                  opacity: { delay: 0.3, duration: 0.3 },
+                  backgroundColor: { delay: 0.85, duration: 0.3 },
+                  borderColor: { delay: 0.85, duration: 0.3 },
+                  boxShadow: { delay: 0.9, duration: 0.35 },
+                }
+              : {
+                  scale: { type: 'spring', stiffness: 300, damping: 18 },
+                  opacity: { duration: 0.2 },
+                  backgroundColor: { duration: 0.3 },
+                  borderColor: { duration: 0.3 },
+                  boxShadow: { duration: 0.4, delay: 0.1 },
+                }}
+            className="grid h-12 w-10 place-items-center rounded-xl border-2 sm:h-14 sm:w-12"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 sm:h-10 sm:w-10" aria-hidden="true">
+              <motion.path
+                d="M4 12l5.5 5.5L20 6.5"
+                stroke="#ffffff"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={isMerging
+                  ? { pathLength: { delay: 1.15, duration: 0.3, ease: 'easeOut' }, opacity: { delay: 1.15, duration: 0.08 } }
+                  : { pathLength: { delay: 0.2, duration: 0.3, ease: 'easeOut' }, opacity: { delay: 0.2, duration: 0.08 } }}
+              />
+            </svg>
+          </motion.div>
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-green-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-7 bg-white p-8 rounded-2xl shadow-xl">
+      <div className="max-w-md w-full space-y-7 bg-white p-5 sm:p-8 rounded-2xl shadow-xl">
         <div className="text-center">
           <div className="mb-4 flex items-center justify-center gap-2">
             <img src="/assets/logo.png" alt="BYFLY logo" className="h-12 w-14 object-contain" />
@@ -164,9 +233,7 @@ const Login = () => {
               <p className="mt-1 whitespace-nowrap text-[9px] uppercase leading-tight tracking-[0.04em] text-emerald-700">WHOLE SALE STORE</p>
             </div>
           </div>
-          <p className="mt-2 text-sm text-gray-600">
-            {mode === 'details' ? 'Phone verified. Add your business details to finish.' : mode === 'code' ? `Enter the SMS code sent to ${normalizedPhone}.` : mode === 'verifying' ? 'Verifying OTP…' : mode === 'merging' ? 'OTP matched. Completing sign in…' : mode === 'success' ? 'Verification complete. Signing you in…' : 'Sign in or create your account using Google or phone.'}
-          </p>
+          {subtitleText && <p className="mt-2 text-sm text-gray-600">{subtitleText}</p>}
         </div>
 
         <div id="recaptcha-container" />
@@ -185,7 +252,7 @@ const Login = () => {
             </form>
           </motion.div>}
 
-          {(mode === 'code' || mode === 'verifying') && <motion.form key="code" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} className="space-y-5" onSubmit={handleVerifyPhone}>
+          {(mode === 'code' || mode === 'verifying') && <motion.form key="code" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }} className="space-y-5" onSubmit={handleVerifyPhone}>
             <div className="flex justify-center gap-2 sm:gap-3" onPaste={(event) => {
               const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
               if (pasted) {
@@ -195,14 +262,13 @@ const Login = () => {
               }
             }}>
               {Array.from({ length: 6 }, (_, index) => (
-                <div key={index} className="relative h-12 w-11 sm:h-14 sm:w-12">
+                <div key={index} className="relative h-12 w-10 sm:h-14 sm:w-12">
                 {mode === 'verifying' && <svg className="pointer-events-none absolute -inset-1 z-20 h-[calc(100%+0.5rem)] w-[calc(100%+0.5rem)]" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-                  <motion.rect
+                  <rect
                     x="3" y="3" width="94" height="94" rx="18"
-                    stroke="#10b981" strokeWidth="3" strokeLinecap="round"
+                    stroke="#10b981" strokeWidth="4" strokeLinecap="round"
                     strokeDasharray="115 260"
-                    animate={{ strokeDashoffset: -375 }}
-                    transition={{ duration: 1.15, repeat: Infinity, ease: 'linear', delay: index * 0.08 }}
+                    style={{ animation: 'otp-sweep 1.15s linear infinite', animationDelay: `${index * 0.08}s` }}
                   />
                 </svg>}
                 <input ref={(element) => { otpInputsRef.current[index] = element }}
@@ -222,7 +288,7 @@ const Login = () => {
                       otpInputsRef.current[index - 1]?.focus()
                     }
                   }}
-                  className={`relative z-10 h-12 w-11 rounded-xl border bg-white text-center text-xl font-semibold text-gray-900 shadow-sm outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 sm:h-14 sm:w-12 ${mode === 'verifying' ? 'border-emerald-400' : 'border-gray-300'}`} />
+                  className={`relative z-10 h-12 w-10 rounded-xl border bg-white text-center text-xl font-semibold text-gray-900 shadow-sm outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 sm:h-14 sm:w-12 ${mode === 'verifying' ? 'border-emerald-400' : 'border-gray-300'}`} />
                 </div>
               ))}
             </div>
@@ -230,53 +296,7 @@ const Login = () => {
             <button type="button" onClick={backToMethods} className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-emerald-700"><ArrowLeft size={15} /> Change number</button>
           </motion.form>}
 
-          {(mode === 'merging' || mode === 'success') && <motion.div key="verification" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-4 py-8" role="status" aria-live="polite">
-            <div className={`relative flex items-center justify-center transition-all duration-300 ${mode === 'success' ? 'h-20 w-20' : 'h-20 w-full max-w-xs'}`}>
-              <AnimatePresence mode="wait" initial={false}>
-                {mode === 'success' ? (
-                  <motion.div key="merged-check" initial={{ scale: 0.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }} className="grid h-20 w-20 place-items-center rounded-full border-4 border-emerald-600 bg-emerald-600 text-white shadow-lg">
-                    <Check className="h-10 w-10" strokeWidth={3} />
-                  </motion.div>
-                ) : mode === 'verifying' ? (
-                  <motion.div key="checking-digits" className="flex gap-2 sm:gap-3">
-                    {Array.from({ length: 6 }, (_, index) => (
-                      <div key={index} className="relative h-12 w-11 sm:h-14 sm:w-12">
-                        <div className="absolute inset-0 rounded-xl border-2 border-emerald-400 border-t-transparent animate-spin" style={{ animationDuration: `${1.1 + index * 0.08}s` }} />
-                        <div className="absolute inset-[2px] grid place-items-center rounded-[10px] bg-white text-lg font-bold text-emerald-700 shadow-md">
-                          {code[index] || '•'}
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
-                ) : (
-                  <motion.div key="merging-digits" className="absolute inset-0">
-                    {Array.from({ length: 6 }, (_, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ left: `${10 + index * 16}%`, opacity: 1, scale: 1 }}
-                        animate={{ left: '50%', opacity: 0, scale: 0.2, rotate: index % 2 ? 12 : -12 }}
-                        transition={{ duration: 1.35, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute top-1/2 grid h-12 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border-2 border-emerald-500 bg-white text-lg font-bold text-emerald-700 shadow-md sm:h-14 sm:w-12"
-                      >
-                        {code[index] || '•'}
-                      </motion.div>
-                    ))}
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.35 }}
-                      animate={{ opacity: 1, scale: [0.35, 1.15, 1] }}
-                      transition={{ delay: 1.34, type: 'spring', stiffness: 180, damping: 16 }}
-                      className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-4 border-emerald-500 bg-emerald-600 text-white shadow-[0_0_0_8px_rgba(16,185,129,0.14),0_10px_25px_rgba(16,185,129,0.3)]"
-                    >
-                      <Check className="h-10 w-10" strokeWidth={3.5} />
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            <p className={`font-medium ${mode === 'success' ? 'text-emerald-800' : 'text-slate-600'}`}>
-              {mode === 'success' ? 'Verified' : mode === 'merging' ? 'OTP matched' : <>Verifying OTP<motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 1, repeat: Infinity }}>…</motion.span></>}
-            </p>
-          </motion.div>}
+          {(mode === 'merging' || mode === 'success') && renderVerification()}
 
           {mode === 'details' && <motion.form key="details" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4" onSubmit={handleCreateAccount}>
             <input required autoComplete="name" value={signupName} onChange={(event) => setSignupName(event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-3 text-gray-900 focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-200" placeholder="Contact name" />

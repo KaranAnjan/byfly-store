@@ -85,6 +85,15 @@ html {
   }
 }
 
+@keyframes otp-sweep {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -375;
+  }
+}
+
 /* Utility Classes */
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;

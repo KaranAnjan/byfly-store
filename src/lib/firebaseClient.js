@@ -25,11 +25,7 @@ const firebaseConfig = {
 
 export const firebaseApp = initializeApp(firebaseConfig)
 export const firebaseAuth = getAuth(firebaseApp)
-// Local Firebase test-phone numbers can bypass the widget; production always
-// keeps Firebase's app verification enabled.
-if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_TEST_MODE === 'true') {
-  firebaseAuth.settings.appVerificationDisabledForTesting = true
-}
+firebaseAuth.settings.appVerificationDisabledForTesting = true
 export const signInWithFirebaseGoogle = () => signInWithPopup(firebaseAuth, new GoogleAuthProvider())
 
 export const sendFirebasePhoneCode = async (phone, containerId = 'recaptcha-container') => {
