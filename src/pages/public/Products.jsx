@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSearchParams, useParams, Link } from 'react-router-dom'
 import { useProducts, SKIP_FETCH } from '../../hooks/useProducts'
 import { useCategories } from '../../hooks/useCategories'
 import { toSlug, formatName } from '../../lib/utils'
 import ProductGrid from '../../components/public/ProductGrid'
 import Loading from '../../components/common/Loading'
-import { Search, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 const CATEGORY_NAMES = {
   'fashion-jewellery': 'Fashion Jewellery',
@@ -15,7 +15,7 @@ const CATEGORY_NAMES = {
 
 const Products = () => {
   const { slug: routeSlug } = useParams()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const { categories, loading: catLoading } = useCategories()
 
   const categorySlug = routeSlug || searchParams.get('category')
@@ -30,38 +30,24 @@ const Products = () => {
   const selectedCategory = ready ? (matchedCategory?.id || null) : SKIP_FETCH
   const { products, loading: prodLoading } = useProducts(selectedCategory)
 
-  const [localSearch, setLocalSearch] = useState(urlSearch)
-
   useEffect(() => {
-    setLocalSearch(urlSearch)
     window.scrollTo(0, 0)
   }, [urlSearch, categorySlug])
 
   const filteredProducts = products.filter((p) => {
-    if (!localSearch) return true
-    const q = localSearch.toLowerCase()
+    if (!urlSearch) return true
+    const q = urlSearch.toLowerCase()
     return (
       p.product_name.toLowerCase().includes(q) ||
       p.product_code.toLowerCase().includes(q)
     )
   })
 
-  const updateSearch = (value) => {
-    setLocalSearch(value)
-    const params = new URLSearchParams(searchParams)
-    if (value.trim()) {
-      params.set('search', value)
-    } else {
-      params.delete('search')
-    }
-    setSearchParams(params, { replace: true })
-  }
-
   const displayName = categorySlug
     ? CATEGORY_NAMES[categorySlug] || formatName(categorySlug.replace(/-/g, ' '))
     : 'All Products'
 
-  const title = localSearch ? `Search: "${localSearch}"` : displayName
+  const title = urlSearch ? `Search: "${urlSearch}"` : displayName
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -90,16 +76,6 @@ const Products = () => {
             )}
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={localSearch}
-              onChange={(e) => updateSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-white"
-            />
-          </div>
         </div>
 
         {/* Product Grid - loading only affects this */}

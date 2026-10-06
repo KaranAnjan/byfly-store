@@ -10,23 +10,38 @@ import { toSlug, formatName } from '../../lib/utils'
 import { attachProductPrices, normalizeStoreProduct } from '../../lib/storeCatalog'
 import { visibleAccountEmail } from '../../lib/accountIdentity'
 
+const STATIC_CATEGORY_ITEMS = [
+  { key: 'cosmetics', label: 'Cosmetics' },
+  { key: 'jewellery', label: 'Jewellery' },
+  { key: 'gifts', label: 'Gifts' },
+  { key: 'toys', label: 'Toys' },
+]
+
 const Navbar = () => {
   const { cart } = useCart()
   const { wishlistIds } = useWishlist()
   const { user, profileSummary, isAdmin } = useAuth()
-  const { categories } = useCategories()
+  const { categories, loading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories()
+  const safeCategories = Array.isArray(categories) ? categories : []
+  const fetchedCategoryMap = new Map(
+    safeCategories.map((category) => [String(category.category_name || '').trim().toLowerCase(), category])
+  )
+  const staticCategories = STATIC_CATEGORY_ITEMS.map((category) => {
+    const fetchedCategory = fetchedCategoryMap.get(category.label.toLowerCase())
+    return {
+      ...category,
+      slug: fetchedCategory ? toSlug(fetchedCategory.category_name) : category.key,
+    }
+  })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
-  const [desktopSearchOpen, setDesktopSearchOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get('search') || '')
   const location = useLocation()
   const navigate = useNavigate()
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
   const searchRef = useRef(null)
-  const desktopSearchRef = useRef(null)
-  const desktopSearchInputRef = useRef(null)
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
   const displayName = user?.user_metadata?.name || profileSummary?.name || ''
   const nameParts = displayName.trim().split(/\s+/).filter(Boolean)
@@ -47,29 +62,9 @@ const Navbar = () => {
   useEffect(() => {
     setMobileMenuOpen(false)
     setMobileSearchOpen(false)
-    setDesktopSearchOpen(false)
     setSearchResults([])
+    setSearchQuery(new URLSearchParams(location.search).get('search') || '')
   }, [location.pathname, location.search])
-
-  useEffect(() => {
-    if (desktopSearchOpen) desktopSearchInputRef.current?.focus()
-  }, [desktopSearchOpen])
-
-  useEffect(() => {
-    if (!desktopSearchOpen) return undefined
-    const handleOutsideClick = (event) => {
-      if (!desktopSearchRef.current?.contains(event.target)) setDesktopSearchOpen(false)
-    }
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') setDesktopSearchOpen(false)
-    }
-    document.addEventListener('mousedown', handleOutsideClick)
-    document.addEventListener('keydown', handleEscape)
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick)
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [desktopSearchOpen])
 
   useEffect(() => {
     if (!searchQuery.trim() || !mobileSearchOpen) {
@@ -92,6 +87,19 @@ const Navbar = () => {
   }, [searchQuery, mobileSearchOpen])
 
   useEffect(() => {
+    const query = searchQuery.trim()
+    if (!query) return undefined
+
+    const timer = setTimeout(() => {
+      navigate(`/products?search=${encodeURIComponent(query)}`)
+      setSearchResults([])
+      setMobileSearchOpen(false)
+    }, 600)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery, navigate])
+
+  useEffect(() => {
     const handleClick = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setSearchResults([])
@@ -105,10 +113,14 @@ const Navbar = () => {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchQuery('')
       setSearchResults([])
-      setDesktopSearchOpen(false)
     }
+  }
+
+  const clearSearch = () => {
+    setSearchQuery('')
+    setSearchResults([])
+    navigate('/products')
   }
 
   const isActive = (path) => location.pathname === path
@@ -158,11 +170,11 @@ const Navbar = () => {
               All Products
             </Link>
 
-            {categories.map((cat) => {
-              const slug = toSlug(cat.category_name)
+            {staticCategories.map((cat) => {
+              const slug = cat.slug
               return (
               <Link
-                key={cat.id}
+                key={cat.key}
                 to={`/category/${slug}`}
                 className={`px-3 py-2 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                   curCategory === slug
@@ -170,7 +182,7 @@ const Navbar = () => {
                     : 'text-emerald-100 hover:bg-white/10'
                 }`}
               >
-                {formatName(cat.category_name)}
+                {cat.label}
               </Link>
               )
             })}
@@ -179,25 +191,31 @@ const Navbar = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3 md:gap-5">
-            <form ref={desktopSearchRef} onSubmit={handleSearchSubmit} className="hidden md:flex items-center">
-              <div className={`relative flex items-center overflow-hidden rounded-lg border border-white/20 bg-white/10 transition-all duration-300 ${desktopSearchOpen ? 'w-36 lg:w-48' : 'w-10'}`}>
+            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center">
+              <div className={`group relative flex items-center overflow-hidden rounded-lg border border-white/20 bg-white/10 transition-all duration-300 ${searchQuery ? 'w-36 lg:w-48' : 'w-10 hover:w-36 lg:hover:w-48'}`}>
                 <input
-                  ref={desktopSearchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search all..."
-                  tabIndex={desktopSearchOpen ? 0 : -1}
-                  aria-hidden={!desktopSearchOpen}
-                  className={`min-w-0 py-2 text-xs text-white placeholder-emerald-200 bg-transparent focus:outline-none transition-all duration-300 ${desktopSearchOpen ? 'w-full pl-3 pr-10 opacity-100' : 'w-0 pl-0 pr-0 opacity-0'}`}
+                  className={`min-w-0 py-2 text-xs text-white placeholder-emerald-200 bg-transparent transition-all duration-300 focus:outline-none ${searchQuery ? 'w-full pl-3 pr-10 opacity-100' : 'w-0 pl-0 pr-0 opacity-0 group-hover:w-full group-hover:pl-3 group-hover:pr-10 group-hover:opacity-100'}`}
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    aria-label="Clear search"
+                    className="absolute right-10 top-0 h-full w-7 items-center justify-center rounded-lg text-emerald-200 transition-colors hover:text-white group-hover:flex"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
                 <button
-                  type="button"
-                  onClick={() => setDesktopSearchOpen((open) => !open)}
-                  aria-label={desktopSearchOpen ? 'Close search' : 'Open search'}
-                  className="absolute right-0 top-0 h-full w-10 flex items-center justify-center text-emerald-100 hover:text-white"
+                  type="submit"
+                  aria-label="Search"
+                  className="group absolute right-0 top-0 h-full w-10 flex items-center justify-center rounded-lg text-emerald-100 transition-all duration-200 hover:bg-white/10 hover:text-white"
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                 </button>
               </div>
             </form>
@@ -242,13 +260,19 @@ const Navbar = () => {
 
             {/* Mobile Search + Menu */}
             <button
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="md:hidden text-emerald-100 hover:text-white"
+              onClick={() => {
+                setMobileSearchOpen((open) => !open)
+                setMobileMenuOpen(false)
+              }}
+              className="group rounded-full p-1 text-emerald-100 transition-all duration-200 hover:bg-white/10 hover:text-white md:hidden"
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
             </button>
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => {
+                setMobileMenuOpen((open) => !open)
+                setMobileSearchOpen(false)
+              }}
               className="md:hidden text-emerald-100 hover:text-white"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -258,7 +282,7 @@ const Navbar = () => {
 
         {/* Mobile Search Bar */}
         {mobileSearchOpen && (
-          <div ref={searchRef} className="md:hidden border-t border-emerald-500 bg-emerald-800 relative">
+          <div ref={searchRef} className="relative z-50 md:hidden border-t border-emerald-500 bg-emerald-800">
             <div className="px-4 py-3">
               <form onSubmit={(e) => { handleSearchSubmit(e); setMobileSearchOpen(false) }}>
                 <div className="relative">
@@ -268,8 +292,18 @@ const Navbar = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search all products..."
-                    className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/15 text-white placeholder-emerald-200 border border-white/20 focus:outline-none focus:bg-white/25 focus:border-white/40 text-sm"
+                    className="w-full pl-9 pr-10 py-2.5 rounded-xl bg-white/15 text-white placeholder-emerald-200 border border-white/20 focus:outline-none focus:bg-white/25 focus:border-white/40 text-sm"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      aria-label="Clear search"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-emerald-200 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
@@ -305,7 +339,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-emerald-500 bg-emerald-800 pb-4 max-h-[80vh] overflow-y-auto">
+          <div className="relative z-50 w-full md:hidden border-t border-emerald-500 bg-emerald-800 pb-4 max-h-[80vh] overflow-y-auto">
 
             <Link
               to="/"
@@ -332,11 +366,11 @@ const Navbar = () => {
               >
                 All Products
               </Link>
-              {categories.map((cat) => {
-                const slug = toSlug(cat.category_name)
+              {staticCategories.map((cat) => {
+                const slug = cat.slug
                 return (
                 <Link
-                  key={cat.id}
+                  key={cat.key}
                   to={`/category/${slug}`}
                   className={`block px-4 py-2.5 text-sm font-medium transition-all duration-200 rounded-lg ${
                     curCategory === slug
@@ -345,10 +379,24 @@ const Navbar = () => {
                   }`}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {formatName(cat.category_name)}
+                  {cat.label}
                 </Link>
                 )
               })}
+              {categoriesLoading && (
+                <div className="px-4 py-2.5 text-sm text-emerald-300" role="status">
+                  Loading categories...
+                </div>
+              )}
+              {!categoriesLoading && categoriesError && (
+                <button
+                  type="button"
+                  onClick={refetchCategories}
+                  className="block w-full px-4 py-2.5 text-left text-sm text-emerald-200 hover:bg-white/10"
+                >
+                  Categories unavailable. Tap to retry.
+                </button>
+              )}
             </div>
 
             <Link
