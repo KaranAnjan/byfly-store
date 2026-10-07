@@ -1,14 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Menu, X, User, Search, Heart } from 'lucide-react'
+import { ShoppingCart, Menu, X, User, Search, Heart, ArrowRight } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import { useWishlist } from '../../context/WishlistContext'
 import { useAuth } from '../../context/AuthContext'
 import { useCategories } from '../../hooks/useCategories'
-import { supabase, getImageUrl } from '../../lib/supabaseClient'
 import { useState, useEffect, useRef } from 'react'
-import { toSlug, formatName } from '../../lib/utils'
-import { attachProductPrices, normalizeStoreProduct } from '../../lib/storeCatalog'
+import { toSlug } from '../../lib/utils'
 import { visibleAccountEmail } from '../../lib/accountIdentity'
+import { supabase } from '../../lib/supabaseClient'
+import { attachProductPrices, normalizeStoreProduct } from '../../lib/storeCatalog'
 
 const STATIC_CATEGORY_ITEMS = [
   { key: 'cosmetics', label: 'Cosmetics' },
@@ -16,6 +16,25 @@ const STATIC_CATEGORY_ITEMS = [
   { key: 'gifts', label: 'Gifts' },
   { key: 'toys', label: 'Toys' },
 ]
+
+const SearchResultsList = ({ results, searching }) => (
+  <div className="absolute left-0 right-0 top-full z-[60] mt-2 max-h-[min(26rem,70vh)] overflow-y-auto rounded-xl border border-emerald-200/20 bg-emerald-900/95 p-2 shadow-2xl backdrop-blur-md">
+    {searching && <div className="px-3 py-3 text-sm text-emerald-200">Searching...</div>}
+    {!searching && results.length === 0 && <div className="px-3 py-3 text-sm text-emerald-200">No products found.</div>}
+    {results.map((product) => (
+      <Link
+        key={product.id}
+        to={`/products/${product.id}`}
+        className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-white/10"
+      >
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-white">{product.product_name}</p>
+        </div>
+        <ArrowRight className="h-4 w-4 flex-shrink-0 text-emerald-300" />
+      </Link>
+    ))}
+  </div>
+)
 
 const Navbar = () => {
   const { cart } = useCart()
@@ -35,6 +54,7 @@ const Navbar = () => {
   })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [searchQuery, setSearchQuery] = useState(() => new URLSearchParams(window.location.search).get('search') || '')
   const location = useLocation()
@@ -62,47 +82,39 @@ const Navbar = () => {
   useEffect(() => {
     setMobileMenuOpen(false)
     setMobileSearchOpen(false)
+    setSearchOpen(false)
     setSearchResults([])
     setSearchQuery(new URLSearchParams(location.search).get('search') || '')
   }, [location.pathname, location.search])
 
   useEffect(() => {
-    if (!searchQuery.trim() || !mobileSearchOpen) {
+    const query = searchQuery.trim()
+    if (!query || !searchOpen) {
       setSearchResults([])
-      return
+      return undefined
     }
+
     const timer = setTimeout(async () => {
       setSearching(true)
-      const q = searchQuery.trim().toLowerCase()
+      const q = query.toLowerCase()
       const { data } = await supabase
         .from('products')
         .select('id, product_name, product_code, image_url, stock, price, mrp, product_stock(retail_quantity,wholesale_quantity)')
         .or(`product_name.ilike.%${q}%,product_code.ilike.%${q}%`)
-        .limit(6)
+        .limit(8)
       const productsWithPrices = await attachProductPrices(data || [])
       setSearchResults(productsWithPrices.map(normalizeStoreProduct))
       setSearching(false)
     }, 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery, mobileSearchOpen])
-
-  useEffect(() => {
-    const query = searchQuery.trim()
-    if (!query) return undefined
-
-    const timer = setTimeout(() => {
-      navigate(`/products?search=${encodeURIComponent(query)}`)
-      setSearchResults([])
-      setMobileSearchOpen(false)
-    }, 600)
 
     return () => clearTimeout(timer)
-  }, [searchQuery, navigate])
+  }, [searchQuery, searchOpen])
 
   useEffect(() => {
     const handleClick = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setSearchResults([])
+        setMobileSearchOpen(false)
+        setSearchOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
@@ -111,16 +123,17 @@ const Navbar = () => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchResults([])
-    }
+    const query = searchQuery.trim()
+    if (!query) return
+    navigate(`/products?search=${encodeURIComponent(query)}`)
+    setSearchOpen(false)
+    setMobileSearchOpen(false)
   }
 
   const clearSearch = () => {
     setSearchQuery('')
     setSearchResults([])
-    navigate('/products')
+    setSearchOpen(false)
   }
 
   const isActive = (path) => location.pathname === path
@@ -131,7 +144,7 @@ const Navbar = () => {
   const isProductsPage = location.pathname === '/products' || !!pathPart
 
   return (
-    <nav className={`${isHomePage ? 'fixed top-0 left-0 right-0' : 'sticky top-0'} z-50 bg-transparent transition-shadow duration-300 ${isTransparentAtTop ? 'shadow-none' : 'shadow-xl'}`}>
+    <nav ref={searchRef} className={`${isHomePage ? 'fixed top-0 left-0 right-0' : 'sticky top-0'} z-50 bg-transparent transition-shadow duration-300 ${isTransparentAtTop ? 'shadow-none' : 'shadow-xl'}`}>
       <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-800 transition-opacity duration-300 ease-out ${isTransparentAtTop ? 'opacity-0' : 'opacity-100'}`} />
       <div className="max-w-7xl mx-auto px-4">
         <div className={`relative z-10 flex justify-between items-center transition-[height] duration-300 ease-out ${isScrolled ? 'h-16' : 'h-20'}`}>
@@ -191,12 +204,13 @@ const Navbar = () => {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3 md:gap-5">
-            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center">
+            <form onSubmit={handleSearchSubmit} className="relative hidden md:flex items-center">
               <div className={`group relative flex items-center overflow-hidden rounded-lg border border-white/20 bg-white/10 transition-all duration-300 ${searchQuery ? 'w-36 lg:w-48' : 'w-10 hover:w-36 lg:hover:w-48'}`}>
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchOpen(true)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
                   placeholder="Search all..."
                   className={`min-w-0 py-2 text-xs text-white placeholder-emerald-200 bg-transparent transition-all duration-300 focus:outline-none ${searchQuery ? 'w-full pl-3 pr-10 opacity-100' : 'w-0 pl-0 pr-0 opacity-0 group-hover:w-full group-hover:pl-3 group-hover:pr-10 group-hover:opacity-100'}`}
                 />
@@ -218,6 +232,9 @@ const Navbar = () => {
                   <Search className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                 </button>
               </div>
+              {searchOpen && (searchResults.length > 0 || searching || searchQuery.trim()) && (
+                <SearchResultsList results={searchResults} searching={searching} />
+              )}
             </form>
             <Link to="/wishlist" aria-label="Wishlist" title="Wishlist" className="relative p-1.5 rounded-full text-emerald-100 hover:text-white hover:bg-white/10 group transition-all duration-300">
               <Heart className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
@@ -262,6 +279,7 @@ const Navbar = () => {
             <button
               onClick={() => {
                 setMobileSearchOpen((open) => !open)
+                setSearchOpen(true)
                 setMobileMenuOpen(false)
               }}
               className="group rounded-full p-1 text-emerald-100 transition-all duration-200 hover:bg-white/10 hover:text-white md:hidden"
@@ -282,57 +300,41 @@ const Navbar = () => {
 
         {/* Mobile Search Bar */}
         {mobileSearchOpen && (
-          <div ref={searchRef} className="relative z-50 md:hidden border-t border-emerald-500 bg-emerald-800">
+          <div className="relative z-50 md:hidden border-t border-emerald-500 bg-emerald-800">
             <div className="px-4 py-3">
-              <form onSubmit={(e) => { handleSearchSubmit(e); setMobileSearchOpen(false) }}>
+              <form onSubmit={handleSearchSubmit}>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-300" />
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setSearchOpen(true)}
+                    onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true) }}
                     placeholder="Search all products..."
-                    className="w-full pl-9 pr-10 py-2.5 rounded-xl bg-white/15 text-white placeholder-emerald-200 border border-white/20 focus:outline-none focus:bg-white/25 focus:border-white/40 text-sm"
+                    className="w-full pl-9 pr-20 py-2.5 rounded-xl bg-white/15 text-white placeholder-emerald-200 border border-white/20 focus:outline-none focus:bg-white/25 focus:border-white/40 text-sm"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={clearSearch}
                       aria-label="Clear search"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-emerald-200 transition-colors hover:bg-white/10 hover:text-white"
+                      className="absolute right-10 top-1/2 -translate-y-1/2 rounded-full p-1 text-emerald-200 transition-colors hover:bg-white/10 hover:text-white"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   )}
+                  <button
+                    type="submit"
+                    aria-label="Search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-white/15 px-2.5 py-1.5 text-emerald-100 transition-colors hover:bg-white/25 hover:text-white"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
                 </div>
               </form>
             </div>
-            {searchResults.length > 0 && (
-              <div className="absolute left-0 right-0 top-full bg-emerald-800 border-t border-emerald-500 shadow-xl rounded-b-xl overflow-hidden z-50">
-                {searchResults.map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/products/${p.id}`}
-                    onClick={() => { setMobileSearchOpen(false); setSearchQuery(''); setSearchResults([]) }}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-emerald-700 overflow-hidden flex-shrink-0">
-                      {p.image_url ? (
-                        <img src={getImageUrl(p.image_url)} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-emerald-300 text-xs">N/A</div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-white truncate">{p.product_name}</p>
-                      <p className="text-xs text-emerald-300">{p.price != null ? `Rs. ${p.price}` : 'Price on request'}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-            {searching && (
-              <div className="px-4 py-2 text-xs text-emerald-300">Searching...</div>
+            {searchOpen && (searchResults.length > 0 || searching || searchQuery.trim()) && (
+              <SearchResultsList results={searchResults} searching={searching} />
             )}
           </div>
         )}
